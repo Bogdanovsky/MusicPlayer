@@ -88,6 +88,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        unregisterReceiver(activityBroadcastReceiver)
+        super.onDestroy()
+    }
+
     fun previousTrack() {
         musicService.previous()
     }
