@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
+        android:name=".MyApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -11,8 +14,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MusicPlayer"
         tools:targetApi="31">
+
         <activity
             android:name=".MainActivity"
+            android:screenOrientation="portrait"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -20,6 +25,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service android:name=".MusicService"
+            android:exported="false">
+        </service>
+
+        <receiver android:name=".MyReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.bogdanovsky.musicplayer.action.PLAY"/>
+                <action android:name="com.bogdanovsky.musicplayer.action.PAUSE"/>
+                <action android:name="com.bogdanovsky.musicplayer.action.NEXT"/>
+                <action android:name="com.bogdanovsky.musicplayer.action.PREVIOUS"/>
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>
