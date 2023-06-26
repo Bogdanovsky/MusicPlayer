@@ -2,7 +2,10 @@ package com.bogdanovsky.musicplayer
 
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.media.MediaPlayer
 import android.os.Binder
 import android.os.Build
@@ -32,9 +35,17 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
     val filename = MutableLiveData<String>(songList[currentSongNumber])
     private var mediaPlayer = MediaPlayer()
     val isPlaying = MutableLiveData<Boolean>(false)
+    private val musicServiceReceiver = MusicServiceReceiver()
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
+        val filter = IntentFilter()
+        filter.addAction(ACTION_PLAY)
+        filter.addAction(ACTION_PAUSE)
+        filter.addAction(ACTION_PREVIOUS)
+        filter.addAction(ACTION_NEXT)
+        registerReceiver(musicServiceReceiver, filter)
 
         val activityIntent = Intent(this, MainActivity::class.java)
         val activityPendingIntent = PendingIntent.getActivity(
@@ -105,6 +116,7 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
     }
 
     override fun onDestroy() {
+        unregisterReceiver(musicServiceReceiver)
         super.onDestroy()
     }
 
@@ -138,9 +150,36 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
 
     fun previous() {
         if (currentSongNumber != 0) {
-            --currentSongNumber
             filename.value = songList[--currentSongNumber]
             setUpMediaPlayer()
+        }
+    }
+}
+
+class MusicServiceReceiver() : BroadcastReceiver() {
+
+    override fun onReceive(context: Context?, intent: Intent?) {
+
+        if (intent != null) {
+            context as MusicService
+            when (intent.action) {
+                ACTION_PLAY -> {
+                    val intent = Intent(ACTION_PLAY)
+                    context?.play()
+                }
+                ACTION_PAUSE -> {
+                    val intent = Intent(ACTION_PAUSE)
+                    context?.pause()
+                }
+                ACTION_PREVIOUS -> {
+                    val intent = Intent(ACTION_PREVIOUS)
+                    context?.previous()
+                }
+                ACTION_NEXT -> {
+                    val intent = Intent(ACTION_NEXT)
+                    context?.next()
+                }
+            }
         }
     }
 }

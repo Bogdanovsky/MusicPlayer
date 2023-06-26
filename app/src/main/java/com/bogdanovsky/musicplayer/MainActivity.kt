@@ -47,7 +47,6 @@ class MainActivity : AppCompatActivity() {
             bound = false
         }
     }
-    private val activityBroadcastReceiver = ActivityBroadcastReceiver(this)
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,12 +72,6 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(applicationContext, MusicService::class.java)
         applicationContext.startForegroundService(intent)
 
-        val filter = IntentFilter()
-        filter.addAction(ACTION_PLAY)
-        filter.addAction(ACTION_PAUSE)
-        filter.addAction(ACTION_PREVIOUS)
-        filter.addAction(ACTION_NEXT)
-        registerReceiver(activityBroadcastReceiver, filter)
     }
 
     override fun onStart() {
@@ -89,7 +82,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        unregisterReceiver(activityBroadcastReceiver)
         super.onDestroy()
     }
 
@@ -107,18 +99,5 @@ class MainActivity : AppCompatActivity() {
 
     fun pauseTrack() {
         musicService.pause()
-    }
-}
-
-class ActivityBroadcastReceiver(activity: MainActivity) : BroadcastReceiver() {
-    override fun onReceive(context: Context?, intent: Intent?) {
-        val activity = context as MainActivity
-        Log.i("TAGGGG", (intent?.action).toString())
-        when (intent?.action) {
-            ACTION_PLAY -> activity.playTrack()
-            ACTION_PAUSE -> activity.pauseTrack()
-            ACTION_PREVIOUS -> activity.previousTrack()
-            ACTION_NEXT -> activity.nextTrack()
-        }
     }
 }
