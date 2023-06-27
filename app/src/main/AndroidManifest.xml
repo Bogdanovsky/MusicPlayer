@@ -27,6 +27,7 @@
         </activity>
 
         <service android:name=".MusicService"
+            android:stopWithTask="true"
             android:exported="false">
         </service>
 
@@ -37,6 +38,7 @@
                 <action android:name="com.bogdanovsky.musicplayer.action.PAUSE"/>
                 <action android:name="com.bogdanovsky.musicplayer.action.NEXT"/>
                 <action android:name="com.bogdanovsky.musicplayer.action.PREVIOUS"/>
+                <action android:name="com.bogdanovsky.musicplayer.action.STOP_SERVICE"/>
             </intent-filter>
         </receiver>
 

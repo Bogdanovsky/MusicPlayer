@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">MusicPlayer</string>
-    <string name="notification_title">Notification Title</string>
-    <string name="notification_message">Notification Message</string>
+    <string name="notification_title">Now playing:</string>
     <string name="ticker_text">Ticker Text</string>
 </resources>

@@ -55,34 +55,40 @@ class MainActivity : AppCompatActivity() {
 
         playButton = findViewById<Button>(R.id.play)
         playButton.setOnClickListener {
-            playTrack()
+            if (bound) playTrack()
         }
         pauseButton = findViewById<Button>(R.id.pause)
         pauseButton.setOnClickListener {
-            pauseTrack()
+            if (bound) pauseTrack()
         }
         findViewById<Button>(R.id.previous).setOnClickListener {
-            previousTrack()
+            if (bound) previousTrack()
         }
         findViewById<Button>(R.id.next).setOnClickListener {
-            nextTrack()
+            if (bound) nextTrack()
         }
         filename = findViewById(R.id.filename)
 
         val intent = Intent(applicationContext, MusicService::class.java)
         applicationContext.startForegroundService(intent)
-
     }
 
     override fun onStart() {
+        Log.i("GATT", " MainActivity onStart")
         super.onStart()
-        Intent(this, MusicService::class.java).also { intent ->
+        val intent = Intent(this, MusicService::class.java)
+        if (!bound) {
             bindService(intent, connection, Context.BIND_AUTO_CREATE)
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onStop() {
+        if (bound) {
+            unbindService(connection)
+            bound = false
+        }
+        Log.i("GATT", " MainActivity onStop")
+        super.onStop()
     }
 
     fun previousTrack() {

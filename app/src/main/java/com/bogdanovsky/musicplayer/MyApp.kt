@@ -19,4 +19,5 @@ class MyApp : Application() {
         notificationManager.createNotificationChannel(notificationChannel)
         super.onCreate()
     }
+
 }

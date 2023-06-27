@@ -2,14 +2,13 @@ package com.bogdanovsky.musicplayer
 
 import android.app.PendingIntent
 import android.app.Service
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.media.MediaPlayer
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.MutableLiveData
@@ -25,6 +24,7 @@ const val ACTION_PLAY: String = "com.bogdanovsky.musicplayer.action.PLAY"
 const val ACTION_PAUSE: String = "com.bogdanovsky.musicplayer.action.PAUSE"
 const val ACTION_NEXT: String = "com.bogdanovsky.musicplayer.action.NEXT"
 const val ACTION_PREVIOUS: String = "com.bogdanovsky.musicplayer.action.PREVIOUS"
+const val ACTION_STOP_SERVICE = "com.bogdanovsky.musicplayer.action.STOP_SERVICE"
 const val NOTIFICATION_CHANNEL_ID = "com.bogdanovsky.musicplayer.mychannel"
 const val MUSIC_SERVICE_ID = 123
 
@@ -45,6 +45,7 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
         filter.addAction(ACTION_PAUSE)
         filter.addAction(ACTION_PREVIOUS)
         filter.addAction(ACTION_NEXT)
+        filter.addAction(ACTION_STOP_SERVICE)
         registerReceiver(musicServiceReceiver, filter)
 
         val activityIntent = Intent(this, MainActivity::class.java)
@@ -86,16 +87,27 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
             nextIntent,
             PendingIntent.FLAG_IMMUTABLE)
 
+        val stopServiceIntent = Intent(this, MyReceiver::class.java)
+        stopServiceIntent.action = ACTION_STOP_SERVICE
+        val stopServicePendingIntent = PendingIntent.getBroadcast(
+            this,
+            6,
+            stopServiceIntent,
+            PendingIntent.FLAG_IMMUTABLE)
+
         val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setContentTitle(getText(R.string.notification_title))
-            .setContentText(getText(R.string.notification_message))
+            .setContentText(filename.value)
+            .setOngoing(true)
             .setSmallIcon(R.drawable.baseline_music_note_24)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 //            .setContentIntent(activityPendingIntent)
+//            .setDeleteIntent(stopServicePendingIntent)
             .addAction(R.drawable.baseline_skip_previous_24, "Previous", previousPendingIntent)
             .addAction(R.drawable.baseline_pause_24, "Pause", pausePendingIntent)
             .addAction(R.drawable.baseline_play_arrow_24, "Play", playPendingIntent)
             .addAction(R.drawable.baseline_skip_next_24, "Next", nextPendingIntent)
+            .addAction(R.drawable.baseline_disabled_by_default_24, "Dismiss", stopServicePendingIntent)
             .setStyle(androidx.media.app.NotificationCompat.MediaStyle())
             .build()
         startForeground(MUSIC_SERVICE_ID, notification)
@@ -116,28 +128,30 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
     }
 
     override fun onDestroy() {
+        mediaPlayer.release()
         unregisterReceiver(musicServiceReceiver)
         super.onDestroy()
     }
 
     private fun setUpMediaPlayer() {
         mediaPlayer.reset()
+
         val afd = assets.openFd(songList[currentSongNumber])
 
-        mediaPlayer?.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length) // initialize it here
-        mediaPlayer?.apply {
+        mediaPlayer.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length) // initialize it here
+        mediaPlayer.apply {
             setOnPreparedListener(this@MusicService)
             prepareAsync() // prepare async to not block main thread
         }
     }
 
     fun play() {
-        mediaPlayer?.start()
+        if (isPlaying.value == false) mediaPlayer.start()
         isPlaying.value = true
     }
 
     fun pause() {
-        mediaPlayer?.pause()
+        if (isPlaying.value == true) mediaPlayer.pause()
         isPlaying.value = false
     }
 
@@ -154,32 +168,11 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
             setUpMediaPlayer()
         }
     }
-}
 
-class MusicServiceReceiver() : BroadcastReceiver() {
-
-    override fun onReceive(context: Context?, intent: Intent?) {
-
-        if (intent != null) {
-            context as MusicService
-            when (intent.action) {
-                ACTION_PLAY -> {
-                    val intent = Intent(ACTION_PLAY)
-                    context?.play()
-                }
-                ACTION_PAUSE -> {
-                    val intent = Intent(ACTION_PAUSE)
-                    context?.pause()
-                }
-                ACTION_PREVIOUS -> {
-                    val intent = Intent(ACTION_PREVIOUS)
-                    context?.previous()
-                }
-                ACTION_NEXT -> {
-                    val intent = Intent(ACTION_NEXT)
-                    context?.next()
-                }
-            }
-        }
+    fun dismiss() {
+        Log.i("GATT", " MusicService dismiss")
+//        stopForeground(Service.STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 }
+
