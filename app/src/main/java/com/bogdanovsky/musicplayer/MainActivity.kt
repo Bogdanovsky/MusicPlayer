@@ -77,9 +77,9 @@ class MainActivity : AppCompatActivity() {
         Log.i("GATT", " MainActivity onStart")
         super.onStart()
         val intent = Intent(this, MusicService::class.java)
-        if (!bound) {
+//        if (!bound) {
             bindService(intent, connection, Context.BIND_AUTO_CREATE)
-        }
+//        }
     }
 
     override fun onStop() {

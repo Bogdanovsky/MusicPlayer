@@ -36,6 +36,7 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
     private var mediaPlayer = MediaPlayer()
     val isPlaying = MutableLiveData<Boolean>(false)
     private val musicServiceReceiver = MusicServiceReceiver()
+    private var isForeground = false
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -48,12 +49,19 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
         filter.addAction(ACTION_STOP_SERVICE)
         registerReceiver(musicServiceReceiver, filter)
 
+        makeForeground()
+        setUpMediaPlayer()
+        return super.onStartCommand(intent, flags, startId)
+    }
+
+    private fun makeForeground() {
         val activityIntent = Intent(this, MainActivity::class.java)
         val activityPendingIntent = PendingIntent.getActivity(
             this,
             1,
             activityIntent,
-            PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.FLAG_IMMUTABLE
+        )
 
         val playIntent = Intent(this, MyReceiver::class.java)
         playIntent.action = ACTION_PLAY
@@ -61,7 +69,8 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
             this,
             2,
             playIntent,
-            PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.FLAG_IMMUTABLE
+        )
 
         val pauseIntent = Intent(this, MyReceiver::class.java)
         pauseIntent.action = ACTION_PAUSE
@@ -69,7 +78,8 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
             this,
             3,
             pauseIntent,
-            PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.FLAG_IMMUTABLE
+        )
 
         val previousIntent = Intent(this, MyReceiver::class.java)
         previousIntent.action = ACTION_PREVIOUS
@@ -77,7 +87,8 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
             this,
             4,
             previousIntent,
-            PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.FLAG_IMMUTABLE
+        )
 
         val nextIntent = Intent(this, MyReceiver::class.java)
         nextIntent.action = ACTION_NEXT
@@ -85,7 +96,8 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
             this,
             5,
             nextIntent,
-            PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.FLAG_IMMUTABLE
+        )
 
         val stopServiceIntent = Intent(this, MyReceiver::class.java)
         stopServiceIntent.action = ACTION_STOP_SERVICE
@@ -93,7 +105,8 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
             this,
             6,
             stopServiceIntent,
-            PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.FLAG_IMMUTABLE
+        )
 
         val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setContentTitle(getText(R.string.notification_title))
@@ -101,18 +114,21 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
             .setOngoing(true)
             .setSmallIcon(R.drawable.baseline_music_note_24)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-//            .setContentIntent(activityPendingIntent)
-//            .setDeleteIntent(stopServicePendingIntent)
+            .setContentIntent(activityPendingIntent)
+    //            .setDeleteIntent(stopServicePendingIntent)
             .addAction(R.drawable.baseline_skip_previous_24, "Previous", previousPendingIntent)
             .addAction(R.drawable.baseline_pause_24, "Pause", pausePendingIntent)
             .addAction(R.drawable.baseline_play_arrow_24, "Play", playPendingIntent)
             .addAction(R.drawable.baseline_skip_next_24, "Next", nextPendingIntent)
-            .addAction(R.drawable.baseline_disabled_by_default_24, "Dismiss", stopServicePendingIntent)
+            .addAction(
+                R.drawable.baseline_disabled_by_default_24,
+                "Dismiss",
+                stopServicePendingIntent
+            )
             .setStyle(androidx.media.app.NotificationCompat.MediaStyle())
             .build()
         startForeground(MUSIC_SERVICE_ID, notification)
-        setUpMediaPlayer()
-        return super.onStartCommand(intent, flags, startId)
+        isForeground = true
     }
 
     inner class LocalBinder : Binder() {
@@ -120,6 +136,8 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
     }
 
     override fun onBind(intent: Intent?): IBinder? {
+        setUpMediaPlayer()
+        if (!isForeground) makeForeground()
         return binder
     }
 
@@ -172,6 +190,7 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener {
     fun dismiss() {
         Log.i("GATT", " MusicService dismiss")
 //        stopForeground(Service.STOP_FOREGROUND_REMOVE)
+        isForeground = false
         stopSelf()
     }
 }
